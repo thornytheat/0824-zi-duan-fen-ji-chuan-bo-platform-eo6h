@@ -40,6 +40,15 @@
     <div class="review-actions"><button name="decision" value="HELD">暂缓</button><button class="action" name="decision" value="APPROVED">签发</button></div>
     <a id="evidence">下载复核证据</a>
   </form>
+  <form id="revocation" hidden>
+    <h3>降级撤销</h3>
+    <label>业务分组 <input id="rev-case" name="case" required></label>
+    <label>审批字段 <input id="rev-field" name="field" type="number" min="0" required></label>
+    <label>生效日 <input id="rev-day" name="day" type="number" min="0" required></label>
+    <label for="rev-note">撤销意见</label>
+    <textarea id="rev-note" name="note" minlength="3" maxlength="200" required></textarea>
+    <button class="action" type="submit">受理撤销</button>
+  </form>
 </aside>
 {% endmacro %}
 {% macro status() %}

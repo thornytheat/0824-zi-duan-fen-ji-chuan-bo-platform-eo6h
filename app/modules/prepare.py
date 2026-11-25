@@ -1,7 +1,7 @@
 from app.business import DomainIssue, by_kind, prepared, single
 
 
-def prepare(rows):
+def prepare(rows, revoked=()):
     from graphlib import TopologicalSorter, CycleError
     audit = single(rows,'audit')
     columns = by_kind(rows,'column')
@@ -20,7 +20,8 @@ def prepare(rows):
         order = list(TopologicalSorter({f:sorted(parents[f]) for f in sorted(parents)}).static_order())
     except CycleError as error:
         raise DomainIssue('LINEAGE_CYCLE') from error
-    permits, expired = {}, set()
+    revoked_fields = {entry['field'] for entry in revoked}
+    permits, expired, dismissed = {}, set(), set()
     for row in by_kind(rows,'approval'):
         field, start, end = row['field'], row['day'], row['until_day']
         if field not in grades or not start < end or not grades[field] <= row['grade'] <= 3:
@@ -28,7 +29,13 @@ def prepare(rows):
         if start <= audit['day'] < end:
             if field in permits:
                 raise DomainIssue('APPROVAL_OVERLAP')
+            if field in revoked_fields:
+                dismissed.add(field)
+                continue
             permits[field] = row['grade']
         elif end <= audit['day']:
             expired.add(field)
-    return prepared(len(order),{'columns':len(order),'active_approvals':len(permits),'snapshot_day':audit['day']},(grades,parents,order,permits,expired,audit))
+    return prepared(len(order),
+                    {'columns':len(order),'active_approvals':len(permits),'snapshot_day':audit['day'],
+                     'revocations':len(revoked_fields),'dismissed':sorted(dismissed)},
+                    (grades,parents,order,permits,expired,audit))

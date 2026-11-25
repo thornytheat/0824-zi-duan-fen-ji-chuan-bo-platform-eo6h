@@ -7,6 +7,7 @@ const file = document.querySelector('#file');
 const profile = document.querySelector('#profile');
 const status = document.querySelector('#notice');
 const detail = document.querySelector('#review');
+const revocation = document.querySelector('#revocation');
 const evidence = document.querySelector('#evidence');
 const stages = [...document.querySelectorAll('[data-stage]')];
 let stage = 'balance';
@@ -31,6 +32,7 @@ function draw() {
   for (const button of stages) button.setAttribute('aria-pressed',String(button.dataset.stage===stage));
   document.querySelector('#panel-title').textContent = stages.find(button => button.dataset.stage===stage)?.textContent || '运行对账';
   detail.hidden = !batch;
+  revocation.hidden = !batch;
   if (batch) {
     document.querySelector('#run-status').textContent = `${batch.id.slice(0,10)} · ${batch.status} · r${batch.revision}`;
     detail.querySelector('[value="APPROVED"]').disabled = !report.balance.releasable || batch.status==='APPROVED';
@@ -101,6 +103,18 @@ detail.addEventListener('submit',event=>{
     const payload={status:event.submitter.value,revision:batch.revision,note:detail.elements.note.value};
     const result=await request(`/api/runs/${batch.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     show(result,true); announce(result.status==='APPROVED'?'批次已签发':'批次已暂缓'); await refresh();
+  });
+});
+revocation.addEventListener('submit',event=>{
+  event.preventDefault();
+  perform(async()=>{
+    const payload={case:revocation.elements.case.value.trim(),
+      field:Number(revocation.elements.field.value),
+      day:Number(revocation.elements.day.value),
+      note:revocation.elements.note.value};
+    const result=await request(`/api/runs/${batch.id}/revocations`,
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    show(result,true); announce('降级撤销已受理，已沿字段依赖重算'); await refresh();
   });
 });
 preview(stage);

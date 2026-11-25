@@ -1,6 +1,7 @@
 import {element} from './client.js';
 
-const labels = {READY:'通过', MISMATCH:'数值不符', PENDING:'待复核', APPROVED:'已签发', HELD:'已暂缓',
+const labels = {READY:'通过', MISMATCH:'数值不符', PENDING:'待复核', APPROVED:'已签发', HELD:'已暂缓', SUSPENDED:'已停用',
+  SUPPLY_SUSPENDED:'停止低级供数',
   INVALID_EQUIVALENCE:'互认条件无效', CREDIT_SHORTFALL:'学分不足', TICKET_MISMATCH:'联单信息不符',
   CONTAMINATION_LIMIT:'杂质率超限', DATA_POSITION_CONFLICT:'数据位置冲突', DANGLING_POSITION:'悬空位置删除',
   LINEAGE_CYCLE:'字段依赖成环', LABEL_TOO_LOW:'分级低于来源', DEPENDENCY_CYCLE:'任务依赖成环',
@@ -39,7 +40,8 @@ export function badge(status) {
 
 const fieldLabels = {matched:'匹配关系', unmet:'未覆盖', loads:'磅单明细', over_limit:'超限联单',
   visible:'可见记录', removed:'删除记录', dangling:'悬空删除', grades:'传播级别', approved:'已批准降级',
-  expired:'已过期审批', schedule:'排程', rejected:'未排入', curve:'剩余比例', horizon:'观察时点',
+  expired:'已过期审批', revoked:'已撤销降级', signed_label:'已签标签', dismissed:'撤销停用的审批',
+  schedule:'排程', rejected:'未排入', curve:'剩余比例', horizon:'观察时点',
   suppressed:'遮蔽单元格', exposed:'可反推', compatible:'通过字段', violations:'差异字段',
   occupied:'占用号源', promoted:'候补转入', invalid_cancels:'无效取消', route:'到站路径',
   pings:'采信定位', missing:'缺站', pairs:'样本对', failed:'未通过', clusters:'归并分组',
@@ -103,7 +105,7 @@ export function snapshot(report, selected, stage) {
   document.querySelector('#detail-title').textContent = picked ? `分组 ${picked.case}` : '采信摘要';
   const shown = picked ? picked.measure?.evidence ?? picked.prep?.details ?? {原因:picked.status} : stats.reasons;
   document.querySelector('#detail').replaceChildren(detailValue(shown));
-  document.querySelector('#counts').textContent = report.balance ? `行数 ${report.balance.accounted}/${report.balance.input} · ${report.balance.ready} 组通过` : `采信 ${stats.accepted} 行 · 隔离 ${stats.rejected} 行`;
+  document.querySelector('#counts').textContent = report.balance ? `行数 ${report.balance.accounted}/${report.balance.input} · ${report.balance.ready} 组通过${report.balance.suspended ? ` · ${report.balance.suspended} 组停用` : ''}` : `采信 ${stats.accepted} 行 · 隔离 ${stats.rejected} 行`;
 }
 
 export function history(items, active) {

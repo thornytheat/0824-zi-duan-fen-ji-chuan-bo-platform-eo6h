@@ -13,6 +13,7 @@
 | M5 运行对账 | 对照输入、采信和隔离行 | `POST /api/stages/balance` | `app/modules/reconcile.py` | `tests/test_reconcile.py` |
 | M6 批次复核 | 执行批次并签发或暂缓 | `POST /api/runs、PATCH /api/runs/<id>` | `app/review/service.py` | `tests/test_review.py` |
 | M7 证据交付 | 下载复核清单 | `GET /api/runs/<id>/evidence` | `app/evidence/render.py` | `tests/test_evidence.py` |
+| M8 降级撤销 | 受理撤销、重算并停用偏低标签 | `POST /api/runs/<id>/revocations` | `app/review/ledger.py` | `tests/test_revocation.py、tests/test_revocation_concurrency.py、tests/test_revocation_http.py` |
 
 ## 输入陷阱
 
@@ -33,5 +34,7 @@
 ## 领域反例
 
 等级 0–3，取自身和上游的最高值。区间左闭右开。已准许的降级结果继续传播，但不得低于字段自身登记级别。重叠审批单禁止同时生效。
+
+降级撤销沿字段依赖重算：核验日早于撤销生效日的签发结果照旧（已签标签冻结为对照基线）；生效日起撤回对应审批单的降级，重算值超过已签标签的分组标记 `SUPPLY_SUSPENDED` 停止按低级供数，同批仍合格分组保持 `READY`。撤销与签发共用写锁，撤销入账后不能再签出偏低标签，已签发批次因撤销停用分组时转为 `SUSPENDED`。
 
 `sample_data/incoming.csv` 的 0003 组触发预检异常，0004 组触发业务判定。`tests/test_calculate.py` 还核对逐组结论和证据字段。

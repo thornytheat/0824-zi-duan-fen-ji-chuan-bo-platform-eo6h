@@ -4,6 +4,7 @@ from app.business import DomainIssue
 from app.evidence.render import artifact
 from app.inputs import read_input
 from app.modules.pipeline import run
+from app.review.ledger import accept
 from app.review.service import execute, review
 
 api = Blueprint('api',__name__,url_prefix='/api')
@@ -33,10 +34,24 @@ def batch(run_id):
     return jsonify(review(store,run_id,request.get_json(silent=True)))
 
 
+@api.post('/runs/<run_id>/revocations')
+def revoke(run_id):
+    store = current_app.extensions['runs']
+    return jsonify(accept(store, run_id, request.get_json(silent=True)))
+
+
+@api.get('/runs/<run_id>/revocations')
+def revocations(run_id):
+    store = current_app.extensions['runs']
+    store.load(run_id)
+    return jsonify(items=store.revocations(run_id))
+
+
 @api.get('/runs/<run_id>/evidence')
 def export(run_id):
-    report = current_app.extensions['runs'].load(run_id)
-    return Response(artifact(report),mimetype='application/json', headers={
+    store = current_app.extensions['runs']
+    report = store.load(run_id)
+    return Response(artifact(report, store.revocations(run_id)),mimetype='application/json', headers={
         'Content-Disposition':f'attachment; filename="review-{report["id"][:12]}.json"',
         'Cache-Control':'no-store',
     })
